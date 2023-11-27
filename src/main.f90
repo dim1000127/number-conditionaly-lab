@@ -28,7 +28,7 @@ program number_conditionaly
       
       open (file=output_file, encoding=E_, newunit=Out, position='append')
          write(Out, *)
-         write(Out, *) "P: ", P(iP)
+         write(Out, '(a, T20, "= ", e10.4)') "P: ", P(iP)
          write(Out, "(a)") "Исходная матрица:"
 
          DO i = 1, N
