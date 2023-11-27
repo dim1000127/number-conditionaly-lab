@@ -15,7 +15,7 @@ program number_conditionaly
    allocate(IPVT(N)) 
 
    DO i = 1, N
-      UnitMatrix(i,i) = i
+      UnitMatrix(i,i) = 1
    END DO
 
    open (file=output_file, encoding=E_, newunit=Out)
@@ -50,7 +50,7 @@ program number_conditionaly
       
       open (file=output_file, encoding=E_, newunit=Out, position='append')
          write(Out, *)
-         write(Out, *) "Определитель исходной матрицы = ", DET
+         write(Out, '(a, T60, "= ", f18.6)') "Определитель исходной матрицы", DET
          write(Out, "(a)") "Обратная матрица:"
 
          DO i = 1, N
@@ -61,18 +61,18 @@ program number_conditionaly
          write(Out, "(a)") "Матрица невязки:"
 
          DO i = 1, N
-            write(Out, '('//N//'(f12.6))') (ResidualMatrix(i, j), j = 1, N)
+            write(Out, '('//N//'(e12.4))') (ResidualMatrix(i, j), j = 1, N)
          END DO
       close (Out)
 
       open (file=output_file, encoding=E_, newunit=Out, position='append')
-         write(Out, *) "COND = ", COND
+         write(Out, '(a, T46, "= ", f18.6)') "COND", COND
       close(Out)
 
       call DECOMP(N, N, ResidualMatrix, COND, IPVT, WORK, ANORM)
 
       open (file=output_file, encoding=E_, newunit=Out, position='append')
-         write(Out, *) "NORM матрицы невязки = ", ANORM
+         write(Out, '(a, T60, "= ", e13.6)') "NORM матрицы невязки", ANORM
       close(Out)
    END DO
 contains
