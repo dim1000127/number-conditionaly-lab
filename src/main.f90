@@ -6,7 +6,7 @@ program number_conditionaly
    integer                    :: Out = 0, i = 0, j = 0, N = 8, iP = 0
    integer, allocatable       :: IPVT(:)
    real(R_), allocatable      :: Matrix(:,:), UnitMatrix(:,:), InverseMatrix(:,:), WORK(:), ResidualMatrix(:,:)
-   real(R_)                   :: P(5), COND, DET, ANORM
+   real(R_)                   :: P(5), COND, DET, NORM, tmp
 
    P = (/1.0, 0.1, 0.01, 0.0001, 0.000001/)
 
@@ -36,7 +36,7 @@ program number_conditionaly
          END DO
       close (Out)
 
-      call DECOMP(N, N, Matrix, COND, IPVT, WORK, ANORM)
+      call DECOMP(N, N, Matrix, COND, IPVT, WORK)
 
       !Вычисление определителя матрицы Matrix
       DET = IPVT(N)
@@ -44,8 +44,7 @@ program number_conditionaly
          DET = DET*(Matrix(i, i))
       END DO 
 
-      call Init_matrix(Matrix, P(iP))
-      call Inverse_matrix(Matrix, InverseMatrix, DET, N)
+      call Inverse_matrix(Matrix, InverseMatrix, UnitMatrix, N, IPVT)
       call Residual_matrix(Matrix, InverseMatrix, UnitMatrix, ResidualMatrix, N)
       
       open (file=output_file, encoding=E_, newunit=Out, position='append')
@@ -69,10 +68,18 @@ program number_conditionaly
          write(Out, '(a, T46, "= ", f18.6)') "COND", COND
       close(Out)
 
-      call DECOMP(N, N, ResidualMatrix, COND, IPVT, WORK, ANORM)
+      !Вычисление нормы матрицы невязки
+      NORM=0.0
+      DO j=1,N
+         tmp=0.0
+         DO i=1,N
+            tmp=tmp+ABS(ResidualMatrix(i,j))
+         END DO
+         IF(tmp > NORM) NORM=tmp
+      END DO
 
       open (file=output_file, encoding=E_, newunit=Out, position='append')
-         write(Out, '(a, T60, "= ", e13.6)') "NORM матрицы невязки", ANORM
+         write(Out, '(a, T60, "= ", e13.6)') "NORM матрицы невязки", NORM
       close(Out)
    END DO
 contains
@@ -96,55 +103,19 @@ contains
    END SUBROUTINE Init_matrix
 
    !Получение обратной матрицы
-   SUBROUTINE Inverse_matrix(Matrix, InverseMatrix, DET_main, N)
+   SUBROUTINE Inverse_matrix(Matrix, InverseMatrix, UnitMatrix, N, IPVT)
       integer, intent(in)                    :: N
-      real(R_), intent(in)                   :: DET_main
-      real(R_), dimension(N, N), intent(in)  :: Matrix
+      real(R_), dimension(N, N), intent(in)  :: Matrix, UnitMatrix
       real(R_), dimension(N, N), intent(out) :: InverseMatrix
+      integer, dimension(N), intent(in)      :: IPVT
 
-      integer                                :: i, j, k
-      real(R_)                               :: mult, DET_minor, COND_tmp, ANORM_tmp
-      real(R_), dimension(N, N)              :: MinorMatrix
-      real(R_), dimension(N-1, N-1)          :: tmpMatrix
-      real(R_), dimension(N-1)               :: WORK_tmp
-      integer, dimension(N-1)                :: IPVT_tmp
-
-      mult = 1 / DET_main
+      real(R_), dimension(N)                 :: WORK_tmp
+      integer                                :: i
 
       DO i = 1, N
-         DO j = 1, N
-            tmpMatrix(:i - 1, :j - 1 ) = Matrix(:i - 1, :j - 1)
-            tmpMatrix(:i - 1, j:) = Matrix(:i - 1, j + 1:)    
-            tmpMatrix(i:, :j - 1) = Matrix(i + 1:, :j - 1)
-            tmpMatrix(i:, j:) = Matrix(i + 1:, j + 1:)
-            
-            call DECOMP(N-1, N-1, tmpMatrix, COND_tmp, IPVT_tmp, WORK_tmp, ANORM_tmp)
-            DET_minor = IPVT_tmp(N-1)
-            DO k = 1, N-1
-               DET_minor = DET_minor * tmpMatrix(k, k)
-            END DO
-            MinorMatrix(i, j) = DET_minor 
-         END DO
-      END DO
-
-      DO i = 1, N
-         DO j = 1, N
-            IF (MOD(i+j, 2) /= 0) THEN
-               MinorMatrix(i, j) = MinorMatrix(i, j) * (-1)
-            END IF       
-         END DO
-      END DO
-
-      DO i = 1, N
-         DO j = 1, N
-            InverseMatrix(i, j) = MinorMatrix(j, i)    
-         END DO
-      END DO
-
-      DO i = 1, N
-         DO j = 1, N
-            InverseMatrix(i, j) = InverseMatrix(i, j) * mult         
-         END DO
+         WORK_tmp = UnitMatrix(:, i)
+         call SOLVE(N, N, Matrix, WORK_tmp, IPVT)
+         InverseMatrix(:, i) = WORK_tmp
       END DO
    END SUBROUTINE Inverse_matrix
 
@@ -164,7 +135,7 @@ contains
       END DO
    END SUBROUTINE Residual_matrix
 
-   SUBROUTINE DECOMP(NDIM,N,A,COND,IPVT,WORK, ANORM)
+   SUBROUTINE DECOMP(NDIM,N,A,COND,IPVT,WORK)
          INTEGER NDIM,N
          REAL A(NDIM,N),COND,WORK(N)
          INTEGER IPVT(N)
