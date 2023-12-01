@@ -166,9 +166,9 @@ contains
 
    SUBROUTINE DECOMP(NDIM,N,A,COND,IPVT,WORK, ANORM)
          INTEGER NDIM,N
-         REAL(R_) A(NDIM,N),COND,WORK(N)
+         REAL A(NDIM,N),COND,WORK(N)
          INTEGER IPVT(N)
-         REAL(R_) EK,T,ANORM,YNORM,ZNORM
+         REAL EK,T,ANORM,YNORM,ZNORM
          INTEGER NM1,I,J,K,KP1,KB,KM1,M
    
          IPVT(N)=1
@@ -268,9 +268,9 @@ contains
       
    SUBROUTINE SOLVE(NDIM,N,A,B,IPVT)
          INTEGER NDIM,N,IPVT(N)
-         REAL(R_) A(NDIM,N),B(N)
+         REAL A(NDIM,N),B(N)
          INTEGER KB,KM1,NM1,KP1,I,K,M
-         REAL(R_) T
+         REAL T
    
          IF(N.EQ.1) GO TO 50
          NM1=N-1
