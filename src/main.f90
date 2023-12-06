@@ -15,7 +15,13 @@ program number_conditionaly
    allocate(IPVT(N)) 
 
    DO i = 1, N
-      UnitMatrix(i,i) = 1
+      DO j = 1, N
+         IF (i == j) THEN
+            UnitMatrix(i,j) = 1
+         ELSE
+            UnitMatrix(i,j) = 0
+         END IF
+      END DO
    END DO
 
    open (file=output_file, encoding=E_, newunit=Out)
@@ -45,6 +51,7 @@ program number_conditionaly
       END DO 
 
       call Inverse_matrix(Matrix, InverseMatrix, UnitMatrix, N, IPVT)
+      call Init_matrix(Matrix, P(iP))
       call Residual_matrix(Matrix, InverseMatrix, UnitMatrix, ResidualMatrix, N)
       
       open (file=output_file, encoding=E_, newunit=Out, position='append')
@@ -137,9 +144,9 @@ contains
 
    SUBROUTINE DECOMP(NDIM,N,A,COND,IPVT,WORK)
          INTEGER NDIM,N
-         REAL A(NDIM,N),COND,WORK(N)
+         REAL(R_) A(NDIM,N),COND,WORK(N)
          INTEGER IPVT(N)
-         REAL EK,T,ANORM,YNORM,ZNORM
+         REAL(R_) EK,T,ANORM,YNORM,ZNORM
          INTEGER NM1,I,J,K,KP1,KB,KM1,M
    
          IPVT(N)=1
@@ -239,9 +246,9 @@ contains
       
    SUBROUTINE SOLVE(NDIM,N,A,B,IPVT)
          INTEGER NDIM,N,IPVT(N)
-         REAL A(NDIM,N),B(N)
+         REAL(R_) A(NDIM,N),B(N)
          INTEGER KB,KM1,NM1,KP1,I,K,M
-         REAL T
+         REAL(R_) T
    
          IF(N.EQ.1) GO TO 50
          NM1=N-1
